@@ -1,17 +1,18 @@
-/** @format */
 
+/** @format */
+// src/utils/useAuthStore.ts
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+const MASTER_USERNAME = "admin";
+const MASTER_PASSWORD = "secret123";
+
 interface AuthState {
   user: { username: string } | null;
   loading: boolean;
-  userName: string;
-  setLoading: (loading: boolean) => void; // 👈agregamos setter
   signIn: (username: string, password: string) => Promise<void>;
   signOut: () => void;
-  setUsername: (username: string) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -19,23 +20,26 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       user: null,
       loading: false,
-      userName: "",
-      setUsername: (username) => {
-        set({ user: { username }, loading: false });
-      },
-      setLoading: (loading) => set({ loading }),
+
       signIn: async (username, password) => {
-        // aquí tu lógica real de login...
-        set({ user: { username }, loading: false });
+        set({ loading: true });
+
+        await new Promise((r) => setTimeout(r, 500));
+        if (username === MASTER_USERNAME && password === MASTER_PASSWORD) {
+          set({ user: { username }, loading: false });
+        } else {
+          set({ loading: false });
+          throw new Error("Usuario o contraseña incorrectos");
+        }
       },
+
       signOut: () => set({ user: null }),
     }),
     {
       name: "@MyApp/auth",
       getStorage: () => AsyncStorage,
       onRehydrateStorage: () => (state) => {
-        // esto se llama cuando termina de traer del storage
-        state?.setLoading(false);
+        state?.signOut();
       },
     }
   )
